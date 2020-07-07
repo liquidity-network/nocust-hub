@@ -1,0 +1,3 @@
+[submodule "just-deploy"]
+	path = just-deploy
+	url = https://github.com/liquidity-network/just-deploy

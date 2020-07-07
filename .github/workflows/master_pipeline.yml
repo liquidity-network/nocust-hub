@@ -1,0 +1,56 @@
+name: Deployment to master host
+
+on:
+    push:
+        branches:
+            - master
+ 
+jobs:
+  production_deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{secrets.PAT}}
+          submodules: true
+      - name: Deploy production
+        uses: appleboy/scp-action@master
+        with:
+          source: ./
+          target: /etc/compose
+          host: ${{secrets.MASTER_HOST}}
+          username: root
+          key: ${{secrets.SSH_KEY}}
+  
+  production_run:
+    runs-on: ubuntu-latest
+    needs: production_deployment
+    steps:
+      - name: Run production
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.MASTER_HOST}}
+          username: root
+          key: ${{secrets.SSH_KEY}}
+          script: bash /etc/compose/deploy.sh
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@v2.0.0
+        env:
+          SLACK_TITLE: Deployment success
+          SLACK_MESSAGE: "Server was successfully deployed to MASTER_HOST"
+          SLACK_WEBHOOK: ${{secrets.SLACK_WEBHOOK}} 
+      - name: Restore if errors
+        if: failure()
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.MASTER_HOST}}
+          username: root
+          key: ${{secrets.SSH_KEY}}
+          script: bash /etc/compose/restore.sh
+      - name: Failure notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2.0.0
+        env:
+          SLACK_TITLE: Deployment failure
+          SLACK_MESSAGE: "Deployment to MASTER_HOST is failed"
+          SLACK_WEBHOOK: ${{secrets.SLACK_WEBHOOK}} 
