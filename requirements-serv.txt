@@ -16,5 +16,5 @@ django-bulk-update
 drf-yasg==1.17.0
 web3>=5.0
 bitcoin==1.1.42
-ecdsa==0.13
+ecdsa==0.13.3
 sortedcontainers==2.1.0
